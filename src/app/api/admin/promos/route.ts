@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function GET() {
   try {
@@ -63,6 +64,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ promo }, { status: 201 });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Create promo error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -116,6 +119,8 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ promo });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Update promo error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -139,6 +144,8 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Delete promo error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

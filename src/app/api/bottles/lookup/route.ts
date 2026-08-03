@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function GET(request: Request) {
   try {
@@ -26,6 +27,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ bottle });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Lookup bottle error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function GET() {
   try {
@@ -71,6 +72,8 @@ export async function GET() {
       chartData,
     });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Get reports error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

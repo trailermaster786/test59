@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function POST(request: Request) {
   try {
@@ -10,16 +11,32 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { items, addressId, paymentMethod, promoCode, notes } = body;
+    const { items, addressId, paymentMethod, promoCode, notes, customerId } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'No items in order' }, { status: 400 });
     }
 
-    // Validate address belongs to user if provided
+    // Drivers can place an order on behalf of a customer (customerId must belong to a customer)
+    let orderUserId = user.userId;
+    if (customerId && customerId !== user.userId) {
+      if (user.role !== 'driver') {
+        return NextResponse.json({ error: 'Only drivers can place orders for another user' }, { status: 403 });
+      }
+      const customer = await prisma.user.findUnique({
+        where: { id: customerId },
+        select: { id: true, role: true, isActive: true },
+      });
+      if (!customer || customer.role !== 'customer' || !customer.isActive) {
+        return NextResponse.json({ error: 'Invalid customer for on-behalf order' }, { status: 400 });
+      }
+      orderUserId = customer.id;
+    }
+
+    // Validate address belongs to the order owner (customer or on-behalf customer) if provided
     if (addressId) {
       const address = await prisma.address.findUnique({ where: { id: addressId } });
-      if (!address || address.userId !== user.userId) {
+      if (!address || address.userId !== orderUserId) {
         return NextResponse.json({ error: 'Invalid address' }, { status: 400 });
       }
     }
@@ -29,8 +46,9 @@ export async function POST(request: Request) {
     const orderItems = [];
 
     for (const item of items) {
-      if (!item.productId || !item.quantity || item.quantity <= 0) {
-        return NextResponse.json({ error: 'Invalid item: productId and positive quantity required' }, { status: 400 });
+      const quantity = Number(item.quantity);
+      if (!item.productId || !Number.isInteger(quantity) || quantity <= 0) {
+        return NextResponse.json({ error: 'Invalid item: productId and positive integer quantity required' }, { status: 400 });
       }
       const product = await prisma.product.findUnique({ where: { id: item.productId } });
       if (!product) {
@@ -39,14 +57,14 @@ export async function POST(request: Request) {
       if (!product.isActive) {
         return NextResponse.json({ error: `Product "${product.name}" is not available` }, { status: 400 });
       }
-      if (product.stock < item.quantity) {
-        return NextResponse.json({ error: `Insufficient stock for "${product.name}". Available: ${product.stock}, requested: ${item.quantity}` }, { status: 400 });
+      if (product.stock < quantity) {
+        return NextResponse.json({ error: `Insufficient stock for "${product.name}". Available: ${product.stock}, requested: ${quantity}` }, { status: 400 });
       }
-      const itemTotal = product.price * item.quantity;
+      const itemTotal = product.price * quantity;
       totalAmount += itemTotal;
       orderItems.push({
         productId: item.productId,
-        quantity: item.quantity,
+        quantity,
         unitPrice: product.price,
       });
     }
@@ -75,7 +93,7 @@ export async function POST(request: Request) {
     // Create order
     const order = await prisma.order.create({
       data: {
-        userId: user.userId,
+        userId: orderUserId,
         addressId: addressId || null,
         totalAmount,
         discount,
@@ -97,6 +115,7 @@ export async function POST(request: Request) {
       });
     }
 
+
     if (appliedPromoId) {
       await prisma.promoOffer.update({
         where: { id: appliedPromoId },
@@ -106,6 +125,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ order }, { status: 201 });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Create order error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

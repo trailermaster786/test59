@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function GET() {
   try {
@@ -33,8 +34,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { plate, model, capacity, driverId } = body;
 
-    if (!plate || !model || !capacity) {
-      return NextResponse.json({ error: 'Plate, model, and capacity are required' }, { status: 400 });
+    if (!plate || !model) {
+      return NextResponse.json({ error: 'Plate and model are required' }, { status: 400 });
+    }
+    const parsedCapacity = Number(capacity);
+    if (capacity === undefined || capacity === '' || isNaN(parsedCapacity) || !Number.isInteger(parsedCapacity) || parsedCapacity <= 0) {
+      return NextResponse.json({ error: 'Capacity must be a positive integer' }, { status: 400 });
     }
 
     const existingTruck = await prisma.truck.findUnique({ where: { plate } });
@@ -43,11 +48,13 @@ export async function POST(request: Request) {
     }
 
     const truck = await prisma.truck.create({
-      data: { plate, model, capacity: parseInt(capacity), driverId: driverId || null },
+      data: { plate, model, capacity: parsedCapacity, driverId: driverId || null },
     });
 
     return NextResponse.json({ truck }, { status: 201 });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Create truck error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -67,13 +74,28 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Truck ID is required' }, { status: 400 });
     }
 
+    if (capacity !== undefined && capacity !== '') {
+      const parsedCapacity = Number(capacity);
+      if (isNaN(parsedCapacity) || !Number.isInteger(parsedCapacity) || parsedCapacity <= 0) {
+        return NextResponse.json({ error: 'Capacity must be a positive integer' }, { status: 400 });
+      }
+    }
+
     const truck = await prisma.truck.update({
       where: { id },
-      data: { plate, model, capacity: capacity ? parseInt(capacity) : undefined, driverId, isActive },
+      data: {
+        ...(plate !== undefined && { plate }),
+        ...(model !== undefined && { model }),
+        ...(capacity !== undefined && { capacity: parseInt(capacity, 10) }),
+        ...(driverId !== undefined && { driverId: driverId || null }),
+        ...(isActive !== undefined && { isActive }),
+      },
     });
 
     return NextResponse.json({ truck });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Update truck error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

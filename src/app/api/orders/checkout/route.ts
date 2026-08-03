@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function POST(request: Request) {
   try {
@@ -23,6 +24,10 @@ export async function POST(request: Request) {
 
     if (order.userId !== user.userId && user.role !== 'driver') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (order.paymentStatus === 'paid') {
+      return NextResponse.json({ error: 'Order is already paid' }, { status: 400 });
     }
 
     // Simulate payment success
@@ -52,6 +57,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ order: updatedOrder, message: 'Payment successful' });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Checkout error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

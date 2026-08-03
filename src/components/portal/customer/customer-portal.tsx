@@ -402,6 +402,7 @@ export default function CustomerPortal() {
 
   return (
     <div className="min-h-screen gradient-mesh">
+      <div className="aurora" />
       {/* Header */}
       <motion.header
         initial={{ y: -100 }}
@@ -590,6 +591,10 @@ export default function CustomerPortal() {
                 <Sparkles className="w-6 h-6 text-cyan-400" />
                 <h2 className="text-3xl font-bold text-white">Water Products</h2>
               </div>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-breathe" />
+                <span className="text-xs text-gray-400">Live inventory</span>
+              </div>
               <motion.div
                 variants={container}
                 initial="hidden"
@@ -599,7 +604,12 @@ export default function CustomerPortal() {
                 {products.map((product) => (
                   <motion.div key={product.id} variants={item}>
                     <motion.div
-                      className="card-modern overflow-hidden group"
+                      className="card-modern overflow-hidden group spotlight-card"
+                      onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        e.currentTarget.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+                        e.currentTarget.style.setProperty('--my', `${e.clientY - rect.top}px`);
+                      }}
                       whileHover={{ y: -8 }}
                     >
                       <div className="h-40 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center relative overflow-hidden">

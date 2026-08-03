@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function GET() {
   try {
@@ -16,6 +17,8 @@ export async function GET() {
 
     return NextResponse.json({ addresses });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Get addresses error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -31,8 +34,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { label, street, city, isDefault } = body;
 
-    if (!label || !street || !city) {
-      return NextResponse.json({ error: 'Label, street, and city are required' }, { status: 400 });
+    if (!label || typeof label !== 'string' || label.trim().length === 0) {
+      return NextResponse.json({ error: 'Label is required' }, { status: 400 });
+    }
+    if (!street || typeof street !== 'string' || street.trim().length === 0) {
+      return NextResponse.json({ error: 'Street is required' }, { status: 400 });
+    }
+    if (!city || typeof city !== 'string' || city.trim().length === 0) {
+      return NextResponse.json({ error: 'City is required' }, { status: 400 });
     }
 
     if (isDefault) {
@@ -45,15 +54,17 @@ export async function POST(request: Request) {
     const address = await prisma.address.create({
       data: {
         userId: user.userId,
-        label,
-        street,
-        city,
+        label: label.trim(),
+        street: street.trim(),
+        city: city.trim(),
         isDefault: isDefault || false,
       },
     });
 
     return NextResponse.json({ address }, { status: 201 });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Create address error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -69,12 +80,22 @@ export async function DELETE(request: Request) {
     const body = await request.json();
     const { id } = body;
 
-    await prisma.address.deleteMany({
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json({ error: 'Address ID is required' }, { status: 400 });
+    }
+
+    const result = await prisma.address.deleteMany({
       where: { id, userId: user.userId },
     });
 
+    if (result.count === 0) {
+      return NextResponse.json({ error: 'Address not found' }, { status: 404 });
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Delete address error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

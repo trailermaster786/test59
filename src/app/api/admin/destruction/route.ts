@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function GET() {
   try {
@@ -31,6 +32,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { bottleIds } = body;
 
+    if (!Array.isArray(bottleIds) || bottleIds.length === 0) {
+      return NextResponse.json({ error: 'bottleIds must be a non-empty array' }, { status: 400 });
+    }
+
     const result = await prisma.bottle.updateMany({
       where: { id: { in: bottleIds } },
       data: { status: 'DESTROYED' },
@@ -50,6 +55,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ destroyed: result.count });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Destroy bottles error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

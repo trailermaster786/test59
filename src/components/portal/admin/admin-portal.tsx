@@ -706,6 +706,7 @@ export default function AdminPortal() {
 
   return (
     <div className="min-h-screen gradient-mesh">
+      <div className="aurora" />
       {/* Header */}
       <motion.header
         initial={{ y: -100 }}
@@ -896,7 +897,14 @@ export default function AdminPortal() {
                     variants={item}
                     whileHover={{ scale: 1.02, y: -2 }}
                   >
-                    <div className="card-modern stat-card p-5">
+                    <div
+                      className="card-modern stat-card p-5 spotlight-card"
+                      onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        e.currentTarget.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+                        e.currentTarget.style.setProperty('--my', `${e.clientY - rect.top}px`);
+                      }}
+                    >
                       <div className="flex items-center gap-4">
                         <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
                           <stat.icon className="w-6 h-6 text-white" />
@@ -1057,7 +1065,7 @@ export default function AdminPortal() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: idx * 0.05 }}
-                        className="glass-card rounded-2xl p-5 border border-white/10 hover:border-cyan-500/30 transition-all"
+                        className="glass-card spotlight-card rounded-2xl p-5 border border-white/10 hover:border-cyan-500/30 transition-all"
                       >
                         {/* Header */}
                         <div className="flex items-start justify-between mb-4">
@@ -1418,9 +1426,14 @@ export default function AdminPortal() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     whileHover={{ scale: 1.02, y: -2 }}
-                    className={`glass-card rounded-2xl p-5 border transition-all ${
+                    className={`glass-card spotlight-card rounded-2xl p-5 border transition-all ${
                       promo.isActive ? 'border-cyan-500/30 hover:border-cyan-400/50' : 'border-white/10 opacity-60'
                     }`}
+                    onMouseMove={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      e.currentTarget.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+                      e.currentTarget.style.setProperty('--my', `${e.clientY - rect.top}px`);
+                    }}
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div>

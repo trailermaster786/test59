@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function PATCH(
   request: Request,
@@ -55,7 +56,11 @@ export async function PATCH(
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: { status },
-      include: { items: true, user: true },
+      include: {
+        items: true,
+        // Only expose safe user fields — never the password hash
+        user: { select: { id: true, name: true, email: true, role: true, phone: true } },
+      },
     });
 
     // Save notification for customer and admin
@@ -112,6 +117,8 @@ export async function PATCH(
 
     return NextResponse.json({ order: updatedOrder });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Update order status error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

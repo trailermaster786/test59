@@ -92,6 +92,7 @@ export default function LoginForm() {
     <div className="min-h-screen gradient-mesh flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated Background */}
       <div className="animated-bg" />
+      <div className="aurora" />
 
       {/* Floating Particles */}
       {mounted && (
@@ -129,7 +130,7 @@ export default function LoginForm() {
             <Droplets className="w-10 h-10 text-white" />
           </motion.div>
           <motion.h1
-            className="text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent"
+            className="text-4xl font-bold text-shimmer"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
@@ -151,7 +152,7 @@ export default function LoginForm() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="card-modern p-6 mb-6"
+          className="card-modern p-6 mb-6 gradient-border"
         >
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="w-4 h-4 text-cyan-400" />
@@ -189,7 +190,7 @@ export default function LoginForm() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
-          className="card-modern p-6"
+          className="card-modern p-6 gradient-border"
         >
           <AnimatePresence mode="wait">
             <motion.div

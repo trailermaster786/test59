@@ -260,6 +260,7 @@ export default function DriverPortal() {
           items: [{ productId: onBehalfProduct, quantity: onBehalfQty }],
           paymentMethod: 'cash',
           notes: `Placed on behalf by ${user?.name}`,
+          customerId: onBehalfCustomerId || undefined,
         }),
       });
 
@@ -305,6 +306,7 @@ export default function DriverPortal() {
 
   return (
     <div className="min-h-screen gradient-mesh">
+      <div className="aurora" />
       {/* Header */}
       <motion.header
         initial={{ y: -100 }}
@@ -518,7 +520,12 @@ export default function DriverPortal() {
                       whileHover={{ scale: 1.01, x: 4 }}
                     >
                       <div
-                        className="card-modern p-5 cursor-pointer"
+                        className="card-modern p-5 cursor-pointer spotlight-card"
+                        onMouseMove={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          e.currentTarget.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+                          e.currentTarget.style.setProperty('--my', `${e.clientY - rect.top}px`);
+                        }}
                         onClick={() => setSelectedOrder(order)}
                       >
                         <div className="flex items-start justify-between">

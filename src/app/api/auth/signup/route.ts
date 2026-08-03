@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { hashPassword, createToken, setTokenCookie } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function POST(request: Request) {
   try {
@@ -48,6 +49,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ user });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Signup error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

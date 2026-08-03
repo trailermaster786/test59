@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function GET() {
   try {
@@ -22,6 +23,8 @@ export async function GET() {
 
     return NextResponse.json({ notifications });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Get notifications error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -37,7 +40,7 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { id } = body;
 
-    if (!id) {
+    if (!id || typeof id !== 'string') {
       return NextResponse.json({ error: 'Notification ID is required' }, { status: 400 });
     }
 
@@ -57,6 +60,8 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Mark notification read error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

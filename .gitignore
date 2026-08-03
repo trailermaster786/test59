@@ -50,3 +50,6 @@ prisma/db/
 .roo
 .trae
 .windsurf
+
+# Freebuff desktop local database
+.freebuff/

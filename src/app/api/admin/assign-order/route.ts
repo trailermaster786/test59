@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,10 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { orderId, driverId } = body;
+
+    if (!orderId || !driverId) {
+      return NextResponse.json({ error: 'Order ID and driver ID are required' }, { status: 400 });
+    }
 
     const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (!order) {
@@ -54,6 +59,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ order: updatedOrder });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Assign order error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

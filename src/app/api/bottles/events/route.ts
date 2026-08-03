@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { shouldFlagForDestruction } from '@/lib/bottle-logic';
 import { BOTTLE_EVENT_TYPES } from '@/lib/constants';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function POST(request: Request) {
   try {
@@ -14,11 +15,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { qrCode, type, orderId, notes } = body;
 
-    if (!qrCode || !type) {
+    if (!qrCode || typeof qrCode !== 'string' || !type || typeof type !== 'string') {
       return NextResponse.json({ error: 'QR code and type are required' }, { status: 400 });
     }
+    if (orderId !== undefined && orderId !== null && typeof orderId !== 'string') {
+      return NextResponse.json({ error: 'Order ID must be a string' }, { status: 400 });
+    }
 
-    const validTypes = Object.values(BOTTLE_EVENT_TYPES);
+    const validTypes = Object.values(BOTTLE_EVENT_TYPES) as string[];
     if (!validTypes.includes(type)) {
       return NextResponse.json({ error: `Invalid event type. Must be one of: ${validTypes.join(', ')}` }, { status: 400 });
     }
@@ -77,6 +81,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ event, bottle: { ...bottle, status: nextStatus, refillCount: newRefillCount } });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Create bottle event error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

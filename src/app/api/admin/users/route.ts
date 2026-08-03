@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser, hashPassword } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function GET() {
   try {
@@ -88,14 +89,23 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
+    const updateData: Record<string, unknown> = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone || null;
+    if (role !== undefined) updateData.role = role;
+    if (isActive !== undefined) updateData.isActive = isActive;
+
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: { name, email, phone, role, isActive },
+      data: updateData,
       select: { id: true, name: true, email: true, role: true, phone: true, isActive: true },
     });
 
     return NextResponse.json({ user: updatedUser });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Update user error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

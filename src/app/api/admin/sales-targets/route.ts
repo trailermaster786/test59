@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { handlePrismaError } from '@/lib/prisma-error';
 
 export async function GET() {
   try {
@@ -18,6 +19,8 @@ export async function GET() {
 
     return NextResponse.json({ targets });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Get sales targets error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -59,6 +62,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Target amount must be a positive number' }, { status: 400 });
     }
 
+    if (targetType && !['monthly', 'weekly', 'quarterly', 'yearly'].includes(targetType)) {
+      return NextResponse.json({ error: 'Invalid target type' }, { status: 400 });
+    }
+
     const target = await prisma.salesTarget.create({
       data: {
         userId,
@@ -75,6 +82,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ target }, { status: 201 });
   } catch (error) {
+    const prismaError = handlePrismaError(error);
+    if (prismaError) return prismaError;
     console.error('Create sales target error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

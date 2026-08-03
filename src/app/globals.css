@@ -66,6 +66,13 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.glass-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 /* Gradient Backgrounds */
 .gradient-mesh {
   background:
@@ -75,6 +82,7 @@ body {
     radial-gradient(at 80% 50%, rgba(236, 72, 153, 0.15) 0px, transparent 50%),
     radial-gradient(at 0% 100%, rgba(6, 182, 212, 0.2) 0px, transparent 50%),
     #0a0a0f;
+  isolation: isolate;
 }
 
 .gradient-water {
@@ -131,6 +139,83 @@ body {
   75% { transform: translate(40px, 20px) scale(1.05); }
 }
 
+/* Aurora drift — slow flowing gradient blobs */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aurora::before,
+.aurora::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.35;
+  will-change: transform;
+}
+
+.aurora::before {
+  width: 55vmax;
+  height: 55vmax;
+  top: -15vmax;
+  left: -10vmax;
+  background: radial-gradient(circle at 30% 30%, #06b6d4, transparent 65%);
+  animation: aurora-a 26s ease-in-out infinite alternate;
+}
+
+.aurora::after {
+  width: 50vmax;
+  height: 50vmax;
+  bottom: -18vmax;
+  right: -12vmax;
+  background: radial-gradient(circle at 70% 70%, #8b5cf6, transparent 65%);
+  animation: aurora-b 32s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-a {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50%  { transform: translate(8vmax, 6vmax) scale(1.2) rotate(30deg); }
+  100% { transform: translate(-4vmax, 10vmax) scale(0.95) rotate(-20deg); }
+}
+
+@keyframes aurora-b {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50%  { transform: translate(-10vmax, -6vmax) scale(1.15) rotate(-25deg); }
+  100% { transform: translate(6vmax, -10vmax) scale(1.05) rotate(20deg); }
+}
+
+/* Gradient border shimmer for featured cards */
+.gradient-border {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #06b6d4, #0ea5e9, #8b5cf6, #06b6d4);
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: border-flow 6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes border-flow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* Animations */
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
@@ -145,6 +230,38 @@ body {
 @keyframes bounce-subtle {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
+}
+
+@keyframes shimmer-text {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.text-shimmer {
+  background: linear-gradient(90deg, #06b6d4 0%, #38bdf8 25%, #a78bfa 50%, #38bdf8 75%, #06b6d4 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shimmer-text 5s linear infinite;
+}
+
+@supports not (background-clip: text) {
+  .text-shimmer {
+    -webkit-text-fill-color: initial;
+    color: #38bdf8;
+  }
+}
+
+/* Soft breathing glow for live indicators */
+@keyframes breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.animate-breathe {
+  animation: breathe 2.4s ease-in-out infinite;
 }
 
 @keyframes particle-float {
@@ -184,6 +301,27 @@ body {
   transform: translateY(-4px);
 }
 
+/* Mouse-tracked spotlight on cards */
+.spotlight-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.spotlight-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(6, 182, 212, 0.12), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
 /* Button Styles */
 .btn-primary {
   background: linear-gradient(135deg, #06b6d4, #0ea5e9);
@@ -220,6 +358,13 @@ body {
 
 .btn-primary:active {
   transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Input Styles */
@@ -309,6 +454,8 @@ body {
   right: 0;
   height: 3px;
   background: linear-gradient(90deg, #06b6d4, #0ea5e9, #3b82f6);
+  background-size: 200% 100%;
+  animation: shimmer 4s linear infinite;
 }
 
 /* Navigation Active Indicator */
@@ -346,6 +493,18 @@ body {
 *:focus-visible {
   outline: 2px solid #06b6d4;
   outline-offset: 2px;
+}
+
+/* Toast-like entry for dialogs (radix data-state driven) */
+@keyframes dialog-pop {
+  0% { opacity: 0; transform: translate(-50%, -48%) scale(0.95); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Disable text selection flashes during animations */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Selection */
